@@ -34,7 +34,7 @@ void reset_ttf_frame(void)
     }
 }
 
-u16 * init_ttf_table(u16 *texture)
+vu16 * init_ttf_table(u16 *texture)
 {
     int i;
     
@@ -46,7 +46,7 @@ u16 * init_ttf_table(u16 *texture)
     ttf_defined_textures = 0;
     ttf_current_frame = 0;
     
-    return texture;
+    return (vu16*)texture;
 }
 
 void set_ttf_window(int x, int y, int width, int height, u32 mode)
