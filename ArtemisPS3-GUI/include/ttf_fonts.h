@@ -8,11 +8,12 @@
 // 全局变量声明
 extern int ttf_inited;
 extern FT_Library freetype;
-extern FT_Face face;
+extern FT_Face face[4];
+extern int f_face[4];
 extern int doShrinkChar;
 
 // 函数声明
-int TTFLoadFont(char * path, void * from_memory, int size_from_memory);
+int TTFLoadFont(int set, char * path, void * from_memory, int size_from_memory);
 void TTFUnloadFont();
 void TTF_to_Bitmap(uint8_t chr, uint8_t * bitmap, short *w, short *h, short *y_correction);
 
