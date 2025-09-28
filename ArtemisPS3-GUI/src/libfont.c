@@ -224,7 +224,7 @@ u8 * AddFontFromTTF(u8 *texture, u8 first_char, u8 last_char, int w, int h,
 
         font_datas.fonts[font_datas.number_of_fonts].fw[n] = (short) w;
 		
-		ttf_callback((u8) (n & 255), letter_bitmap, &font_datas.fonts[font_datas.number_of_fonts].fw[n], &hh,  &font_datas.fonts[font_datas.number_of_fonts].fy[n]);
+		ttf_callback((uint32_t)n, letter_bitmap, &font_datas.fonts[font_datas.number_of_fonts].fw[n], &hh,  &font_datas.fonts[font_datas.number_of_fonts].fy[n]);
 
         // letter background correction
         if((hh + font_datas.fonts[font_datas.number_of_fonts].fy[n]) > font_datas.fonts[font_datas.number_of_fonts].bh) 

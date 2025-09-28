@@ -60,7 +60,7 @@ y_correction : the Y correction to display the character correctly in the screen
 */
 
 int doShrinkChar = 0;
-void TTF_to_Bitmap(uint8_t chr, uint8_t * bitmap, short *w, short *h, short *y_correction)
+void TTF_to_Bitmap(uint32_t code, uint8_t * bitmap, short *w, short *h, short *y_correction)
 {
     if(f_face[0]) FT_Set_Pixel_Sizes(face[0], (*w), (*h));
     if(f_face[1]) FT_Set_Pixel_Sizes(face[1], (*w), (*h));
@@ -74,13 +74,13 @@ void TTF_to_Bitmap(uint8_t chr, uint8_t * bitmap, short *w, short *h, short *y_c
     FT_UInt index;
 
     // 尝试从已加载的字体中找到能显示该字符的字体
-    if(f_face[0] && (index = FT_Get_Char_Index(face[0], (char) chr)) != 0 
+    if(f_face[0] && (index = FT_Get_Char_Index(face[0], code)) != 0 
         && !FT_Load_Glyph(face[0], index, FT_LOAD_RENDER)) slot = face[0]->glyph;
-    else if(f_face[1] && (index = FT_Get_Char_Index(face[1], (char) chr)) != 0 
+    else if(f_face[1] && (index = FT_Get_Char_Index(face[1], code)) != 0 
         && !FT_Load_Glyph(face[1], index, FT_LOAD_RENDER)) slot = face[1]->glyph;
-    else if(f_face[2] && (index = FT_Get_Char_Index(face[2], (char) chr)) != 0 
+    else if(f_face[2] && (index = FT_Get_Char_Index(face[2], code)) != 0 
         && !FT_Load_Glyph(face[2], index, FT_LOAD_RENDER)) slot = face[2]->glyph;
-    else if(f_face[3] && (index = FT_Get_Char_Index(face[3], (char) chr)) != 0 
+    else if(f_face[3] && (index = FT_Get_Char_Index(face[3], code)) != 0 
         && !FT_Load_Glyph(face[3], index, FT_LOAD_RENDER)) slot = face[3]->glyph;
     else {(*w) = 0; return;}
 
