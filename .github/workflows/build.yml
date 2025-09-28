@@ -20,7 +20,7 @@ jobs:
     - name: Set env vars
       id: slug
       run: |
-        echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
+        echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
         echo "pkg_file=ArtemisPS3-GUI/ArtemisPS3-GUI.pkg" >> $GITHUB_ENV
 
       # using pre-compiled sdk
