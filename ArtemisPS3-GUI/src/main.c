@@ -37,6 +37,8 @@
 
 #include "common.h"
 #include "codes.h"
+#include "utf8_utils.h"
+#include "utf8_fs.h"
 
 #define SC_SYS_POWER        (379)
 #define SYS_REBOOT          0x8201
@@ -267,22 +269,22 @@ static void sys_callback(uint64_t status, uint64_t param, void* userdata) {
 char ** LoadGames_ReadDirectory(char * path, const char * param, int * ret_count)
 {
 	DIR *d;
-	struct dirent *dir;
 
 	char fullPath[1024];
+	char fileName[256];
 
 	char * * files = (char**)malloc(1000 * sizeof(char*));
 
 	int count = 0;
 
-	if ((d = opendir(path)))
+	if ((d = utf8_opendir(path)))
 	{
-		while ((dir = readdir(d)) != NULL && dir->d_name != NULL && count < 1000)
+		while (utf8_readdir(d, fileName, sizeof(fileName)) == 0 && count < 1000)
 		{
-			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0)
+			if (strcmp(fileName, ".") != 0 && strcmp(fileName, "..") != 0)
 			{
-				snprintf(fullPath, sizeof(fullPath)-1, "%s%s%s", path, dir->d_name, param);
-				if (file_exists(fullPath) == SUCCESS)
+				snprintf(fullPath, sizeof(fullPath)-1, "%s%s%s", path, fileName, param);
+				if (utf8_file_exists(fullPath) == SUCCESS)
 				{
 					files[count] = (char*)malloc(strlen(fullPath));
 					strcpy(files[count], (char*)fullPath);
@@ -290,7 +292,7 @@ char ** LoadGames_ReadDirectory(char * path, const char * param, int * ret_count
 				}
 			}
 		}
-		closedir(d);
+		utf8_closedir(d);
 	}
 
 	*ret_count = count;
@@ -1911,6 +1913,14 @@ s32 main(s32 argc, const char* argv[])
     for (i = 0; i < menu_options_maxopt; i++)
         menu_options_options[i].callback(i, menu_options_selections[i]);
 
+    // 测试中文显示支持
+    DrawUTF8String(100, 200, "ArtemisPS3 中文支持测试");
+    DrawUTF8String(100, 230, "这是一段中文字符，用于测试UTF-8编码显示");
+    tiny3d_Flip();
+    
+    // 暂停2秒让用户看到测试结果
+    sys_usleep(2000000);
+    
     SetMenu(0);
     
     while (!close_art)
