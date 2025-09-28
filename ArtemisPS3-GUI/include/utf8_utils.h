@@ -30,4 +30,8 @@ int utf8_char_len(uint8_t c);
 // 检查UTF-8字符串是否有效
 int utf8_is_valid(const char *str);
 
+// 比较两个UTF-8字符串（大小写不敏感）
+// 返回值小于0表示str1小于str2，等于0表示相等，大于0表示str1大于str2
+int utf8_strcasecmp(const char *str1, const char *str2);
+
 #endif // UTF8_UTILS_H
