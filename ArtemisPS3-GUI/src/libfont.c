@@ -780,7 +780,7 @@ float DrawUTF8String(float x, float y, const char *str) {
                 
                 // 2. 计算缩放因子，使中文字符适合这个字符框
                 float scale_factor = 1.0f;
-                if (slot->bitmap.rows > 0 && slot->bitmap.height > 0) {
+                if (slot->bitmap.rows > 0 && slot->bitmap.width > 0) {
                     // 计算垂直方向的缩放因子
                     float scale_y = char_height / (float)slot->bitmap.rows;
                     // 计算水平方向的缩放因子
