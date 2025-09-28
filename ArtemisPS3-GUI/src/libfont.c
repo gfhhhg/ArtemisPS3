@@ -430,42 +430,12 @@ int WidthFromStrMono(u8 * str)
     return w;
 }
 
-void DrawCharSpecial(float x, float y, float z, const special_char* schr)
-{
-	float h = (float)font_datas.fonts[font_datas.current_font].h;
-	float dx = font_datas.sx * schr->sx, dy = font_datas.sy * schr->sy;
-
-	y += (float)((schr->fy * font_datas.sy) / h) / schr->sy;
-	
-	// Load sprite texture
-	tiny3d_SetTexture(0, schr->image.texture_off, schr->image.texture.width,
-		schr->image.texture.height, schr->image.texture.pitch,
-		TINY3D_TEX_FORMAT_A8R8G8B8, 1);
-
-	tiny3d_SetPolygon(TINY3D_QUADS);
-
-	tiny3d_VertexPos(x, y, z);
-	tiny3d_VertexColor(font_datas.color);
-	tiny3d_VertexTexture(0.0f, 0.0f);
-
-	tiny3d_VertexPos(x + dx, y, z);
-	tiny3d_VertexTexture(0.999f, 0.0f);
-
-	tiny3d_VertexPos(x + dx, y + dy + 1, z);
-	tiny3d_VertexTexture(0.999f, 0.999f);
-
-	tiny3d_VertexPos(x, y + dy + 1, z);
-	tiny3d_VertexTexture(0.0f, 0.999f);
-
-	tiny3d_End();
-}
-
 void DrawCharMono(float x, float y, float z, u8 chr)
 {
 	special_char* schr = GetSpecialCharFromValue(chr);
 	if (schr)
 	{
-		DrawCharSpecial(x, y, z, schr);
+		DrawCharSpecial(x, y, z, schr, 1);
 		return;
 	}
 
