@@ -741,8 +741,9 @@ float DrawUTF8String(float x, float y, const char *str) {
             FT_GlyphSlot slot = face->glyph;
             int error;
             
-            // 设置字体大小
-            FT_Set_Pixel_Sizes(face, font_datas.fonts[current_font].w, font_datas.fonts[current_font].h);
+            // 设置字体大小，确保中文字符和ASCII字符在相同的像素大小下渲染
+            // 为了更好地匹配ASCII字符的视觉大小，我们将字体大小稍微调大一点
+            FT_Set_Pixel_Sizes(face, font_datas.fonts[current_font].w + 2, font_datas.fonts[current_font].h + 2);
             
             // 加载Unicode字符
             error = FT_Load_Char(face, code, FT_LOAD_RENDER);
@@ -798,7 +799,11 @@ float DrawUTF8String(float x, float y, const char *str) {
                 float char_y_float = y + dy2 - (slot->bitmap.rows * scale_factor);
                 
                 // 4. 微调垂直位置，确保视觉一致性
-                char_y_float += 1;
+                char_y_float += 2;
+                
+                // 5. 计算字符在字符框中的水平居中位置
+                float horizontal_offset = (char_width - (slot->bitmap.width * scale_factor)) / 2;
+                char_x += horizontal_offset;
                 
                 int char_y = (int)char_y_float;
                 
@@ -838,8 +843,8 @@ float DrawUTF8String(float x, float y, const char *str) {
                     tiny3d_End();
                 }
                 
-                // 更新X坐标，并应用相同的缩放因子
-                x += (slot->advance.x >> 6) * scale_factor;
+                // 更新X坐标，使用与ASCII字符相同的逻辑，确保字符间距一致
+                x += char_width;
             }
             
             // 恢复字体状态
