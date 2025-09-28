@@ -1,10 +1,8 @@
-#include <ft2build.h>
-#include <freetype/freetype.h> 
-#include <freetype/ftglyph.h>
+#include "ttf_fonts.h"
 
 /******************************************************************************************************************************************************/
 /* TTF functions to load and convert fonts         
- * From fonts_from_ttf Tiny3D sample                                                                                                    */
+ * From fonts_from_ttf Tiny3D sample                                                                                                   */
  /*****************************************************************************************************************************************************/
 
 int ttf_inited = 0;

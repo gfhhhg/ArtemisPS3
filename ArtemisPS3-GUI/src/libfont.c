@@ -741,7 +741,7 @@ float DrawUTF8String(float x, float y, const char *str) {
                             // 简化实现：绘制一个1x1的四边形
                             tiny3d_SetPolygon(TINY3D_QUADS);
                             tiny3d_VertexPos(char_x + col, char_y + row, font_datas.Z);
-                            tiny3d_VertexColor(font_datas.color & 0xffffff00 | alpha);
+                            tiny3d_VertexColor((font_datas.color & 0xffffff00) | alpha);
                             tiny3d_VertexPos(char_x + col + 1, char_y + row, font_datas.Z);
                             tiny3d_VertexPos(char_x + col + 1, char_y + row + 1, font_datas.Z);
                             tiny3d_VertexPos(char_x + col, char_y + row + 1, font_datas.Z);
