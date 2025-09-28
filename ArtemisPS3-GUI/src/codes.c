@@ -950,7 +950,7 @@ int QSortGameList_Compare(const void* a, const void* b)
     if (((struct game_entry*) a)->name == NULL || ((struct game_entry*) b)->name == NULL)
         return 0;
 
-    return strcasecmp(((struct game_entry*) a)->name, ((struct game_entry*) b)->name);
+    return utf8_strcasecmp(((struct game_entry*) a)->name, ((struct game_entry*) b)->name);
 }
 
 /*

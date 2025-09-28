@@ -689,8 +689,14 @@ float DrawUTF8String(float x, float y, const char *str) {
             // 保存当前字体状态
             int temp_font = font_datas.current_font;
             
-            // 确保我们使用的是TTF字体
-            SetCurrentFont(0);
+            // 使用思源黑体来渲染中文等非ASCII字符
+            // 如果思源黑体已加载(font_source_han_sans存在)
+            if (font_datas.number_of_fonts > font_source_han_sans) {
+                SetCurrentFont(font_source_han_sans);
+            } else {
+                // 否则使用默认TTF字体
+                SetCurrentFont(0);
+            }
             
             // 绘制Unicode字符
             FT_GlyphSlot slot = face->glyph;

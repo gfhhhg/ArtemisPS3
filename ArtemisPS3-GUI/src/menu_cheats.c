@@ -479,12 +479,36 @@ void DrawGameList(int selIndex, struct game_entry * games, int glen, u8 alpha)
             SetFontColor(0x00000000 | a, 0x00000000);
 			if (games[x].name)
 			{
-				char * nBuffer = (char*)malloc(strlen(games[x].name));
+				// 使用UTF-8函数处理中文文件名
+				char * nBuffer = (char*)malloc(strlen(games[x].name) + 1);
 				strcpy(nBuffer, games[x].name);
 				int game_name_width = 0;
-				while ((game_name_width = WidthFromStr((u8*)nBuffer)) > 0 && (MENU_ICON_OFF + (MENU_TITLE_OFF * 1) - xo + game_name_width) > (800 - (MENU_ICON_OFF * 3) - xo))
-					nBuffer[strlen(nBuffer) - 1] = '\0';
-				DrawString(MENU_ICON_OFF + (MENU_TITLE_OFF * 1) - xo, game_y, nBuffer);
+				// 使用UTF-8安全的字符串截断逻辑
+				while ((game_name_width = WidthFromUTF8(nBuffer)) > 0 && (MENU_ICON_OFF + (MENU_TITLE_OFF * 1) - xo + game_name_width) > (800 - (MENU_ICON_OFF * 3) - xo))
+				{
+					// 找到最后一个完整的UTF-8字符
+					int len = strlen(nBuffer);
+					if (len <= 1) break; // 至少保留一个字符
+					
+					// 从末尾向前寻找有效的UTF-8起始字节
+					int i = len - 1;
+					while (i > 0 && (nBuffer[i] & 0xC0) == 0x80) // 如果是UTF-8的后续字节
+					{
+						i--;
+					}
+					
+					// 如果找到了有效的起始字节，截断到该位置
+					if (i > 0 || (nBuffer[0] & 0x80) == 0) // 确保第一个字符是有效的
+					{
+						nBuffer[i] = '\0';
+					}
+					else
+					{
+						break; // 如果所有字符都无效，停止截断
+					}
+				}
+				// 使用DrawUTF8String绘制UTF-8字符串
+				DrawUTF8String(MENU_ICON_OFF + (MENU_TITLE_OFF * 1) - xo, game_y, nBuffer);
 				free(nBuffer);
 			}
 			if (games[x].title_id)

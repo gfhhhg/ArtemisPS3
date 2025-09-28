@@ -54,6 +54,7 @@
 #include "comfortaa_bold_ttf.h"
 #include "comfortaa_light_ttf.h"
 #include "comfortaa_regular_ttf.h"
+#include "source_han_sans_ttf.h"
 
 //Sound
 #include <soundlib/spu_soundlib.h>
@@ -837,6 +838,9 @@ void LoadTexture(void)
 	TTFLoadFont(NULL, (void *)comfortaa_bold_ttf, comfortaa_bold_ttf_size);
     texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
 	TTFLoadFont(NULL, (void *)comfortaa_light_ttf, comfortaa_light_ttf_size);
+    texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
+    // Load Source Han Sans for Chinese characters support
+    TTFLoadFont(NULL, (void *)source_han_sans_ttf, source_han_sans_ttf_size);
     texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
     
     font_mem = texture_pointer;

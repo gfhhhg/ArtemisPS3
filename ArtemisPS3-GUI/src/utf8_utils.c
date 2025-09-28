@@ -210,3 +210,51 @@ int utf8_is_valid(const char *str) {
     
     return 1;
 }
+
+// 比较两个UTF-8字符串（大小写不敏感）
+int utf8_strcasecmp(const char *str1, const char *str2) {
+    const uint8_t *p1 = (const uint8_t *)str1;
+    const uint8_t *p2 = (const uint8_t *)str2;
+    
+    while (1) {
+        // 解码两个字符串的下一个字符
+        uint32_t c1 = 0;
+        uint32_t c2 = 0;
+        
+        if (*p1) {
+            c1 = utf8_decode(&p1);
+        }
+        
+        if (*p2) {
+            c2 = utf8_decode(&p2);
+        }
+        
+        // 如果两个字符都为空，表示字符串相等
+        if (c1 == 0 && c2 == 0) {
+            return 0;
+        }
+        
+        // 如果只有一个字符为空，则该字符串较小
+        if (c1 == 0) {
+            return -1;
+        }
+        
+        if (c2 == 0) {
+            return 1;
+        }
+        
+        // 对ASCII字母进行大小写转换
+        if (c1 >= 'A' && c1 <= 'Z') {
+            c1 += 'a' - 'A';
+        }
+        
+        if (c2 >= 'A' && c2 <= 'Z') {
+            c2 += 'a' - 'A';
+        }
+        
+        // 比较字符
+        if (c1 != c2) {
+            return (int)(c1 - c2);
+        }
+    }
+}
