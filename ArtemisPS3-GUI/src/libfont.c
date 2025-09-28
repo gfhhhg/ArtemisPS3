@@ -496,7 +496,7 @@ void DrawChar(float x, float y, float z, u8 chr)
 	special_char* schr = GetSpecialCharFromValue(chr);
 	if (schr)
 	{
-		DrawCharSpecial(x, y, z, schr);
+		DrawCharSpecial(x, y, z, schr, 1);
 		return;
 	}
 
@@ -849,15 +849,15 @@ float DrawString(float x, float y, char *str)
     switch (font_datas.align)
     {
     case FONT_ALIGN_SCREEN_CENTER:
-        x= (848 - WidthFromStr(str)) / 2;
+        x= (848 - WidthFromStr((u8*)str)) / 2;
         break;
 
     case FONT_ALIGN_RIGHT:
-		x -= WidthFromStr(str);
+		x -= WidthFromStr((u8*)str);
         break;
 
     case FONT_ALIGN_CENTER:
-		x -= WidthFromStr(str)/2;
+		x -= WidthFromStr((u8*)str)/2;
         break;
 
     default:
