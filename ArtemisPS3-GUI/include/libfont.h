@@ -84,6 +84,12 @@ float GetFontX();
 
 float GetFontY();
 
+// Font alignment constants
+#define FONT_ALIGN_LEFT			0
+#define FONT_ALIGN_SCREEN_CENTER 1
+#define FONT_ALIGN_RIGHT		2
+#define FONT_ALIGN_CENTER		3
+
 // set mono spacing (if 0 uses normal space)
 
 void SetMonoSpace(int space);

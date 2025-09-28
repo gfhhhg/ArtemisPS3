@@ -13,7 +13,7 @@ int Render_String_UTF8(u16 * bitmap, int w, int h, u8 *string, int sw, int sh);
 
 
 // initialize and create textures slots for ttf
-eu16 * init_ttf_table(u16 *texture);
+vu16 * init_ttf_table(u16 *texture);
 
 // do one time per frame to reset the character use flag
 void reset_ttf_frame(void);
