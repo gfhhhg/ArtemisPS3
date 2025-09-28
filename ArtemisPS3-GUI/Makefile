@@ -99,7 +99,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
 PNGFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.png)))
 JPGFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.jpg)))
-TTFFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ttf)))
+#TTFFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.ttf))) # 不再使用内置TTF字体
 MP3FILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.mp3)))
 VCGFILES	:=	$(foreach dir,$(SHADERS),$(notdir $(wildcard $(dir)/*.vcg)))
 FCGFILES	:=	$(foreach dir,$(SHADERS),$(notdir $(wildcard $(dir)/*.fcg)))
@@ -114,7 +114,7 @@ else
 endif
 
 export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-			$(addsuffix .o,$(TTFFILES)) \
+			#$(addsuffix .o,$(TTFFILES)) \ # 不再使用内置TTF字体
 			$(addsuffix .o,$(MP3FILES)) \
 			$(addsuffix .o,$(VPOFILES)) \
 			$(addsuffix .o,$(FPOFILES)) \
@@ -193,10 +193,10 @@ $(OUTPUT).elf:	$(OFILES)
 	@$(bin2o)
 
 #---------------------------------------------------------------------------------
-%.ttf.o	:	%.ttf
-#---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@$(bin2o)
+#%.ttf.o	: %.ttf # 不再使用内置TTF字体
+##---------------------------------------------------------------------------------
+#	@echo $(notdir $<)
+#	@$(bin2o)
 
 #---------------------------------------------------------------------------------
 %.vpo.o	:	%.vpo
