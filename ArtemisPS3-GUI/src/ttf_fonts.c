@@ -35,6 +35,7 @@ int TTFLoadFont(char * path, void * from_memory, int size_from_memory)
 void TTFUnloadFont()
 {
    FT_Done_FreeType(freetype);
+   face = NULL; // 确保face指针被设置为NULL，避免访问已释放的内存
    ttf_inited = 0;
 }
 

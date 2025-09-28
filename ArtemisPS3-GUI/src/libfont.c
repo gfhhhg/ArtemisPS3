@@ -689,26 +689,10 @@ float DrawUTF8String(float x, float y, const char *str) {
             // 保存当前字体状态
             int temp_font = font_datas.current_font;
             
-            // 使用思源黑体来渲染中文等非ASCII字符
-            // 如果思源黑体已加载(font_source_han_sans存在)
-            if (font_datas.number_of_fonts > font_source_han_sans) {
-                SetCurrentFont(font_source_han_sans);
-            } else {
-                // 否则使用默认TTF字体
-                SetCurrentFont(0);
-            }
-            
             // 绘制Unicode字符
-            FT_GlyphSlot slot = face->glyph;
-            int error;
-            
-            // 设置字体大小
-            FT_Set_Pixel_Sizes(face, font_datas.fonts[current_font].w, font_datas.fonts[current_font].h);
-            
-            // 加载Unicode字符
-            error = FT_Load_Char(face, code, FT_LOAD_RENDER);
-            if (error) {
-                // 如果加载失败，绘制一个方块作为占位符
+            // 首先检查face是否有效（因为TTFUnloadFont可能已经被调用）
+            if (!face) {
+                // 如果face无效，绘制一个方块作为占位符
                 float char_width = (font_datas.sx + font_datas.extra) * 2;
                 float char_height = font_datas.sy;
                 
@@ -732,36 +716,79 @@ float DrawUTF8String(float x, float y, const char *str) {
                 
                 x += char_width;
             } else {
-                // 计算字符位置
-                int char_x = (int)x + slot->bitmap_left;
-                int char_y = (int)y - slot->bitmap_top;
-                
-                // 绘制字符位图
-                // 使用tiny3d的API来绘制像素
-                int row, col;
-                for (row = 0; row < slot->bitmap.rows; row++) {
-                    for (col = 0; col < slot->bitmap.width; col++) {
-                        u8 alpha = slot->bitmap.buffer[row * slot->bitmap.width + col];
-                        if (alpha > 0) {
-                            // 这里需要根据实际情况调整tiny3d绘制单个像素的方式
-                            // 简化实现：绘制一个1x1的四边形
-                            tiny3d_SetPolygon(TINY3D_QUADS);
-                            tiny3d_VertexPos(char_x + col, char_y + row, font_datas.Z);
-                            tiny3d_VertexColor((font_datas.color & 0xffffff00) | alpha);
-                            tiny3d_VertexPos(char_x + col + 1, char_y + row, font_datas.Z);
-                            tiny3d_VertexPos(char_x + col + 1, char_y + row + 1, font_datas.Z);
-                            tiny3d_VertexPos(char_x + col, char_y + row + 1, font_datas.Z);
-                            tiny3d_End();
-                        }
-                    }
+                // 使用思源黑体来渲染中文等非ASCII字符
+                // 如果思源黑体已加载(font_source_han_sans存在)
+                if (font_datas.number_of_fonts > font_source_han_sans) {
+                    SetCurrentFont(font_source_han_sans);
+                } else {
+                    // 否则使用默认TTF字体
+                    SetCurrentFont(0);
                 }
                 
-                // 更新X坐标
-                x += (slot->advance.x >> 6);
+                FT_GlyphSlot slot = face->glyph;
+                int error;
+                
+                // 设置字体大小
+                FT_Set_Pixel_Sizes(face, font_datas.fonts[current_font].w, font_datas.fonts[current_font].h);
+                
+                // 加载Unicode字符
+                error = FT_Load_Char(face, code, FT_LOAD_RENDER);
+                if (error) {
+                    // 如果加载失败，绘制一个方块作为占位符
+                    float char_width = (font_datas.sx + font_datas.extra) * 2;
+                    float char_height = font_datas.sy;
+                    
+                    if (font_datas.bkcolor) {
+                        tiny3d_SetPolygon(TINY3D_QUADS);
+                        tiny3d_VertexPos(x, y, font_datas.Z);
+                        tiny3d_VertexColor(font_datas.bkcolor);
+                        tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                        tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                        tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                        tiny3d_End();
+                    }
+                    
+                    tiny3d_SetPolygon(TINY3D_QUADS);
+                    tiny3d_VertexPos(x, y, font_datas.Z);
+                    tiny3d_VertexColor(font_datas.color);
+                    tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                    tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                    tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                    tiny3d_End();
+                    
+                    x += char_width;
+                } else {
+                    // 计算字符位置
+                    int char_x = (int)x + slot->bitmap_left;
+                    int char_y = (int)y - slot->bitmap_top;
+                    
+                    // 绘制字符位图
+                    // 使用tiny3d的API来绘制像素
+                    int row, col;
+                    for (row = 0; row < slot->bitmap.rows; row++) {
+                        for (col = 0; col < slot->bitmap.width; col++) {
+                            u8 alpha = slot->bitmap.buffer[row * slot->bitmap.width + col];
+                            if (alpha > 0) {
+                                // 这里需要根据实际情况调整tiny3d绘制单个像素的方式
+                                // 简化实现：绘制一个1x1的四边形
+                                tiny3d_SetPolygon(TINY3D_QUADS);
+                                tiny3d_VertexPos(char_x + col, char_y + row, font_datas.Z);
+                                tiny3d_VertexColor((font_datas.color & 0xffffff00) | alpha);
+                                tiny3d_VertexPos(char_x + col + 1, char_y + row, font_datas.Z);
+                                tiny3d_VertexPos(char_x + col + 1, char_y + row + 1, font_datas.Z);
+                                tiny3d_VertexPos(char_x + col, char_y + row + 1, font_datas.Z);
+                                tiny3d_End();
+                            }
+                        }
+                    }
+                    
+                    // 更新X坐标
+                    x += (slot->advance.x >> 6);
+                }
+                
+                // 恢复字体状态
+                SetCurrentFont(temp_font);
             }
-            
-            // 恢复字体状态
-            SetCurrentFont(temp_font);
         }
     }
     
