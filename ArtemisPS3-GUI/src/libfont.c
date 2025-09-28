@@ -10,6 +10,11 @@
 
 #include "libfont.h"
 #include "menu.h"
+#include "utf8_utils.h"
+#include "ttf_fonts.h"
+
+// 外部声明FreeType的face变量
+extern FT_Face face;
 
 struct t_font_description
 {
@@ -597,6 +602,185 @@ float DrawStringMono(float x, float y, char *str)
     font_datas.X = x; font_datas.Y = y;
 
     return x;
+}
+
+// UTF-8字符串宽度测量函数
+int WidthFromUTF8(const char *str) {
+    if (!str) return 0;
+    
+    int total_width = 0;
+    const uint8_t *p = (const uint8_t *)str;
+    
+    while (*p) {
+        uint32_t code = utf8_decode(&p);
+        float dx = font_datas.sx + font_datas.extra;
+        
+        if (code < 128) {
+            // ASCII字符
+            special_char* schr = GetSpecialCharFromValue((u8)code);
+            if (schr) {
+                total_width += (font_datas.sx * schr->sx) * schr->fw / (float)font_datas.fonts[font_datas.current_font].w;
+            } else {
+                if (code >= font_datas.fonts[font_datas.current_font].first_char && 
+                    code <= font_datas.fonts[font_datas.current_font].last_char) {
+                    total_width += dx * font_datas.fonts[font_datas.current_font].fw[(u8)code] / 
+                                font_datas.fonts[font_datas.current_font].w;
+                } else {
+                    // 未知字符，使用默认宽度
+                    total_width += dx;
+                }
+            }
+        } else {
+            // 非ASCII字符（中文等），这里假设我们使用的字体支持这些字符
+            // 对于中文字符，我们使用双倍宽度
+            total_width += (font_datas.sx + font_datas.extra) * 2;
+        }
+    }
+    
+    return total_width;
+}
+
+// UTF-8字符串绘制函数
+float DrawUTF8String(float x, float y, const char *str) {
+    int dx = (font_datas.sx + font_datas.extra);
+    float initX = x;
+    
+    if (font_datas.align == 1) {
+        x = (848 - WidthFromUTF8(str)) / 2;
+    } else if (font_datas.align == 2) {
+        x -= WidthFromUTF8(str);
+    } else if (font_datas.align == 3) {
+        x -= WidthFromUTF8(str) / 2;
+    }
+    
+    const uint8_t *p = (const uint8_t *)str;
+    
+    // 保存当前字体设置
+    u32 current_color = font_datas.color;
+    int current_font = font_datas.current_font;
+    
+    while (*p) {
+        uint32_t code = utf8_decode(&p);
+        
+        if (code == '\n') {
+            x = initX;
+            y += font_datas.sy * font_datas.fonts[font_datas.current_font].bh / 
+                 font_datas.fonts[font_datas.current_font].h;
+            continue;
+        }
+        
+        if (code < 128) {
+            // ASCII字符，使用现有的DrawChar函数
+            DrawChar(x, y, font_datas.Z, (u8)code);
+            
+            special_char* schr = GetSpecialCharFromValue((u8)code);
+            if (schr) {
+                x += (font_datas.sx * schr->sx) * schr->fw / (float)font_datas.fonts[font_datas.current_font].w;
+            } else {
+                float ddX = dx * font_datas.fonts[font_datas.current_font].fw[(u8)code] / 
+                           font_datas.fonts[font_datas.current_font].w;
+                if (p > (const uint8_t *)str && *(p-1) == 'j')
+                    ddX *= 2.0 / 3.0;
+                if (code == 'm' || code == 'M')
+                    ddX *= 0.9;
+                if (code == '.')
+                    ddX *= 3.0 / 2.0;
+                x += ddX;
+            }
+        } else {
+            // 对于非ASCII字符（如中文），我们使用FreeType库来渲染Unicode字符
+            // 保存当前字体状态
+            int temp_font = font_datas.current_font;
+            
+            // 确保我们使用的是TTF字体
+            SetCurrentFont(0);
+            
+            // 绘制Unicode字符
+            FT_GlyphSlot slot = face->glyph;
+            int error;
+            
+            // 设置字体大小
+            FT_Set_Pixel_Sizes(face, font_datas.fonts[current_font].w, font_datas.fonts[current_font].h);
+            
+            // 加载Unicode字符
+            error = FT_Load_Char(face, code, FT_LOAD_RENDER);
+            if (error) {
+                // 如果加载失败，绘制一个方块作为占位符
+                float char_width = (font_datas.sx + font_datas.extra) * 2;
+                float char_height = font_datas.sy;
+                
+                if (font_datas.bkcolor) {
+                    tiny3d_SetPolygon(TINY3D_QUADS);
+                    tiny3d_VertexPos(x, y, font_datas.Z);
+                    tiny3d_VertexColor(font_datas.bkcolor);
+                    tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                    tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                    tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                    tiny3d_End();
+                }
+                
+                tiny3d_SetPolygon(TINY3D_QUADS);
+                tiny3d_VertexPos(x, y, font_datas.Z);
+                tiny3d_VertexColor(font_datas.color);
+                tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                tiny3d_End();
+                
+                x += char_width;
+            } else {
+                // 计算字符位置
+                int char_x = (int)x + slot->bitmap_left;
+                int char_y = (int)y - slot->bitmap_top;
+                
+                // 绘制字符位图
+                // 使用tiny3d的API来绘制像素
+                int row, col;
+                for (row = 0; row < slot->bitmap.rows; row++) {
+                    for (col = 0; col < slot->bitmap.width; col++) {
+                        u8 alpha = slot->bitmap.buffer[row * slot->bitmap.width + col];
+                        if (alpha > 0) {
+                            // 这里需要根据实际情况调整tiny3d绘制单个像素的方式
+                            // 简化实现：绘制一个1x1的四边形
+                            tiny3d_SetPolygon(TINY3D_QUADS);
+                            tiny3d_VertexPos(char_x + col, char_y + row, font_datas.Z);
+                            tiny3d_VertexColor(font_datas.color & 0xffffff00 | alpha);
+                            tiny3d_VertexPos(char_x + col + 1, char_y + row, font_datas.Z);
+                            tiny3d_VertexPos(char_x + col + 1, char_y + row + 1, font_datas.Z);
+                            tiny3d_VertexPos(char_x + col, char_y + row + 1, font_datas.Z);
+                            tiny3d_End();
+                        }
+                    }
+                }
+                
+                // 更新X坐标
+                x += (slot->advance.x >> 6);
+            }
+            
+            // 恢复字体状态
+            SetCurrentFont(temp_font);
+        }
+    }
+    
+    // 恢复原始字体设置
+    font_datas.color = current_color;
+    SetCurrentFont(current_font);
+    
+    font_datas.X = x; font_datas.Y = y;
+    
+    return x;
+}
+
+// UTF-8格式化字符串绘制函数
+float DrawUTF8FormatString(float x, float y, const char *format, ...) {
+    static char buff[4096];
+    va_list opt;
+    
+    va_start(opt, format);
+    vsnprintf(buff, sizeof(buff), format, opt);
+    va_end(opt);
+    
+    return DrawUTF8String(x, y, buff);
 }
 
 float DrawString(float x, float y, char *str)
