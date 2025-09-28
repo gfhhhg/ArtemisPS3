@@ -113,8 +113,9 @@ else
 	export LD	:=	$(CXX)
 endif
 
+# 不再使用内置TTF字体
+
 export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-			#$(addsuffix .o,$(TTFFILES)) \ # 不再使用内置TTF字体
 			$(addsuffix .o,$(MP3FILES)) \
 			$(addsuffix .o,$(VPOFILES)) \
 			$(addsuffix .o,$(FPOFILES)) \
