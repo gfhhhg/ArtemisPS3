@@ -116,4 +116,15 @@ float DrawString(float x, float y, char *str);
 
 float DrawFormatString(float x, float y, char *format, ...);
 
+// UTF-8 support functions
+
+// function to get width of UTF-8 string based on font
+int WidthFromUTF8(const char * str);
+
+// function to draw UTF-8 string. It return X incremented
+float DrawUTF8String(float x, float y, const char *str);
+
+// function to draw formatted UTF-8 string. It return X incremented
+float DrawUTF8FormatString(float x, float y, const char *format, ...);
+
 #endif
