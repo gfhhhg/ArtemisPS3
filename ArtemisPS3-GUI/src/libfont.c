@@ -12,6 +12,7 @@
 #include "menu.h"
 #include "utf8_utils.h"
 #include "ttf_fonts.h"
+#include "ttf_render.h"
 
 // 定义字体索引常量
 #define font_source_han_sans 3  // 思源黑体是第四个加载的字体，索引为3
@@ -363,6 +364,44 @@ void RegisterSpecialCharacter(char value, short fw, short fy, float sx, float sy
 
 }
 
+int DrawCharSpecial(float x, float y, float z, const special_char* schr, uint8_t draw)
+{
+    float dx = (float)font_datas.sx * schr->sx;
+    float dy = (float)font_datas.sy * schr->sy;
+
+    if (!draw)
+        return (int)dx;
+
+    if (schr->fy)
+        y += (float)((schr->fy * font_datas.sy) / (float)font_datas.fonts[font_datas.current_font].h);
+    else
+        y += ((float)font_datas.sy - dy) / 2;
+
+    // Load sprite texture
+    tiny3d_SetTexture(0, schr->image.texture_off, schr->image.texture.width,
+        schr->image.texture.height, schr->image.texture.pitch,
+        TINY3D_TEX_FORMAT_A8R8G8B8, 1);
+
+    tiny3d_SetPolygon(TINY3D_QUADS);
+
+    tiny3d_VertexPos(x, y, z);
+    tiny3d_VertexColor(font_datas.color);
+    tiny3d_VertexTexture(0.0f, 0.0f);
+
+    tiny3d_VertexPos(x + dx, y, z);
+    tiny3d_VertexTexture(0.999f, 0.0f);
+
+    tiny3d_VertexPos(x + dx, y + dy + 1, z);
+    tiny3d_VertexTexture(0.999f, 0.999f);
+
+    tiny3d_VertexPos(x, y + dy + 1, z);
+    tiny3d_VertexTexture(0.0f, 0.999f);
+
+    tiny3d_End();
+
+    return (int)dx;
+}
+
 int WidthFromStr(u8 * str)
 {
     int w = 0;
@@ -558,6 +597,24 @@ static int i_must_break_line(char *str, float x)
     if(*str && (x+xx) >= font_datas.autonewline) return 1;
 
     return 0;
+}
+
+int skip_icon(int x, int y, char c)
+{
+	special_char* schr = GetSpecialCharFromValue(c);
+	if (schr)
+		return DrawCharSpecial(x, y, font_datas.Z, schr, 0);
+
+	else return 0;
+}
+
+int draw_icon(int x, int y, char c)
+{
+	special_char* schr = GetSpecialCharFromValue(c);
+	if (schr)
+		return DrawCharSpecial(x, y, font_datas.Z, schr, 1);
+
+	else return 0;
 }
 
 float DrawStringMono(float x, float y, char *str)
@@ -819,59 +876,27 @@ float DrawUTF8FormatString(float x, float y, const char *format, ...) {
 
 float DrawString(float x, float y, char *str)
 {
-	int dx = (font_datas.sx+font_datas.extra);
-	float initX = x;
-	
-    if(font_datas.align == 1) {
-    
-        x= (848 - WidthFromStr((u8 *) str)) / 2;
+    switch (font_datas.align)
+    {
+    case FONT_ALIGN_SCREEN_CENTER:
+        x= (848 - WidthFromStr(str)) / 2;
+        break;
 
-    }
-	else if (font_datas.align == 2) {
-		x -= WidthFromStr((u8 *) str);
-	}
-	else if (font_datas.align == 3) {
-		x -= WidthFromStr((u8 *) str)/2;
-	}
+    case FONT_ALIGN_RIGHT:
+		x -= WidthFromStr(str);
+        break;
 
-    while (*str) {
-        
-		special_char* schr = GetSpecialCharFromValue(*str);
+    case FONT_ALIGN_CENTER:
+		x -= WidthFromStr(str)/2;
+        break;
 
-        if(*str == '\n') {
-            x = initX; 
-            y += font_datas.sy * font_datas.fonts[font_datas.current_font].bh / font_datas.fonts[font_datas.current_font].h;
-            str++;
-            continue;
-        } else {
-            if(font_datas.autonewline && i_must_break_line(str, x)) {
-                x = initX; 
-                y += font_datas.sy * font_datas.fonts[font_datas.current_font].bh / font_datas.fonts[font_datas.current_font].h;
-            }
-        }
-
-        DrawChar(x, y, font_datas.Z, (u8) *str);
-		
-		if (schr)
-			x += (font_datas.sx * schr->sx) * schr->fw / (float)font_datas.fonts[font_datas.current_font].w;
-		else
-		{
-			//Make font look nicer by fixing bad spacing
-			float ddX = dx * font_datas.fonts[font_datas.current_font].fw[((u8)*str)] / font_datas.fonts[font_datas.current_font].w;
-			if (str[1] == 'j')
-				ddX *= 2.0 / 3.0;
-			if (str[0] == 'm' || str[0] == 'M')
-				ddX *= 0.9;
-			if (str[0] == '.')
-				ddX *= 3.0 / 2.0;
-			x += ddX;
-		}
-        str++; 
+    default:
+        break;
     }
 
-    font_datas.X = x; font_datas.Y = y;
+    display_ttf_string((int)x + 1, (int)y + 1, str, 0x00000000 | (font_datas.color & 0x000000ff), 0, font_datas.sx, font_datas.sy + 4, &skip_icon);
 
-    return x;
+    return display_ttf_string((int)x, (int)y, str, font_datas.color, font_datas.bkcolor, font_datas.sx, font_datas.sy + 4, &draw_icon);
 }
 
 static char buff[4096];

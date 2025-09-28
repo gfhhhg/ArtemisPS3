@@ -50,11 +50,11 @@
 #include "menu_options.h"
 #include "menu_cheats.h"
 
-//Font
-#include "comfortaa_bold_ttf.h"
-#include "comfortaa_light_ttf.h"
-#include "comfortaa_regular_ttf.h"
-#include "source_han_sans_ttf.h"
+//Font - 不再使用内置TTF字体
+// #include "comfortaa_bold_ttf.h"
+// #include "comfortaa_light_ttf.h"
+// #include "comfortaa_regular_ttf.h"
+// #include "source_han_sans_ttf.h"
 
 //Sound
 #include <soundlib/spu_soundlib.h>
@@ -833,27 +833,14 @@ void LoadTexture(void)
     
     ResetFont();
     
-    // 加载PS3系统字体，这些字体可以更好地支持中文等非ASCII字符
-    // 尝试加载拉丁文、中文、日文和韩文字体
-    TTFLoadFont(0, "/dev_flash/data/font/SCE-PS3-SR-R-LATIN2.TTF", NULL, 0);
-    TTFLoadFont(1, "/dev_flash/data/font/SCE-PS3-DH-R-CGB.TTF", NULL, 0); // 中文字体
-    TTFLoadFont(2, "/dev_flash/data/font/SCE-PS3-SR-R-JPN.TTF", NULL, 0);
-    TTFLoadFont(3, "/dev_flash/data/font/SCE-PS3-YG-R-KOR.TTF", NULL, 0);
+    // 只加载PS3系统字体
+    TTFLoadFont(0, "/dev_flash/data/font/SCE-PS3-SR-R-LATIN2.TTF", NULL, 0); // 拉丁文字体
+    TTFLoadFont(1, "/dev_flash/data/font/SCE-PS3-DH-R-CGB.TTF", NULL, 0);    // 中文字体
+    TTFLoadFont(2, "/dev_flash/data/font/SCE-PS3-SR-R-JPN.TTF", NULL, 0);    // 日文字体
+    TTFLoadFont(3, "/dev_flash/data/font/SCE-PS3-YG-R-KOR.TTF", NULL, 0);    // 韩文字体
     
-    // 加载内置字体作为备选
-	TTFLoadFont(0, NULL, (void *)comfortaa_regular_ttf, comfortaa_regular_ttf_size);
-    texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
-	TTFLoadFont(0, NULL, (void *)comfortaa_bold_ttf, comfortaa_bold_ttf_size);
-    texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
-	TTFLoadFont(0, NULL, (void *)comfortaa_light_ttf, comfortaa_light_ttf_size);
-    texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
-    // Load Source Han Sans for Chinese characters support
-    TTFLoadFont(1, NULL, (void *)source_han_sans_ttf, source_han_sans_ttf_size);
-    texture_pointer = (u32 *) AddFontFromTTF((u8 *) texture_pointer, 32, 255, 32, 32, TTF_to_Bitmap);
-    
+    // 设置字体内存指针
     font_mem = texture_pointer;
-    
-    // 不卸载字体，以便在渲染时能够使用多个字体
     
     if (!menu_textures && menu_size)
         menu_textures = (png_texture *)malloc(sizeof(png_texture) * menu_size);
