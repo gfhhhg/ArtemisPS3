@@ -13,9 +13,6 @@
 #include "utf8_utils.h"
 #include "ttf_fonts.h"
 
-// 外部声明FreeType的face变量
-extern FT_Face face;
-
 struct t_font_description
 {
     int w, h, bh;
