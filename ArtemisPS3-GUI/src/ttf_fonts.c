@@ -43,7 +43,11 @@ int TTFLoadFont(int set, char * path, void * from_memory, int size_from_memory)
 void TTFUnloadFont()
 {
    FT_Done_FreeType(freetype);
-   face = NULL; // 确保face指针被设置为NULL，避免访问已释放的内存
+   // 将face数组的每个元素设置为NULL，避免访问已释放的内存
+   for(int i = 0; i < 4; i++) {
+      face[i] = NULL;
+      f_face[i] = 0;
+   }
    ttf_inited = 0;
 }
 
@@ -101,5 +105,4 @@ void TTF_to_Bitmap(uint8_t chr, uint8_t * bitmap, short *w, short *h, short *y_c
 
     *w = ((slot->advance.x + 31) >> 6) + ((slot->bitmap_left < 0) ? -slot->bitmap_left : 0);
     *h = slot->bitmap.rows;
-}
 }
