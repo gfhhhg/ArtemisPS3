@@ -771,9 +771,10 @@ float DrawUTF8String(float x, float y, const char *str) {
                 
                 x += char_width;
             } else {
-                // 计算字符位置
+                // 计算字符位置，调整中文字符的垂直位置，避免悬浮问题
                 int char_x = (int)x + slot->bitmap_left;
-                int char_y = (int)y - slot->bitmap_top;
+                // 使用y + (font_datas.sy - slot->bitmap.rows) 来确保字符底部对齐
+                int char_y = (int)y + (font_datas.sy - slot->bitmap.rows);
                 
                 // 绘制字符位图
                 if (slot->bitmap.rows > 0 && slot->bitmap.width > 0) {
