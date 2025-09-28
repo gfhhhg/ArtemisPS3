@@ -145,7 +145,7 @@ extern void DrawTextureRotated(png_texture tex, int x, int y, int z, int w, int 
 extern int init_loading_screen(const char* message);
 extern void stop_loading_screen();
 
-extern int TTFLoadFont(char * path, void * from_memory, int size_from_memory);
+extern int TTFLoadFont(int set, char * path, void * from_memory, int size_from_memory);
 extern void TTF_to_Bitmap(uint8_t chr, uint8_t * bitmap, short *w, short *h, short *y_correction);
 extern void TTFUnloadFont();
 
