@@ -1,8 +1,9 @@
 #ifndef TTF_FONTS_H
 #define TTF_FONTS_H
 
-#include <freetype/freetype.h>
-#include <freetype/ftglyph.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
 
 // 全局变量声明
 extern int ttf_inited;
