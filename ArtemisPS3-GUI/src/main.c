@@ -1912,14 +1912,6 @@ s32 main(s32 argc, const char* argv[])
     //Set options
     for (i = 0; i < menu_options_maxopt; i++)
         menu_options_options[i].callback(i, menu_options_selections[i]);
-
-    // 测试中文显示支持
-    DrawUTF8String(100, 200, "ArtemisPS3 中文支持测试");
-    DrawUTF8String(100, 230, "这是一段中文字符，用于测试UTF-8编码显示");
-    tiny3d_Flip();
-    
-    // 暂停2秒让用户看到测试结果
-    sysUsleep(2000000);
     
     SetMenu(0);
     
