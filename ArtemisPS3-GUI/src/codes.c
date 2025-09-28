@@ -12,6 +12,8 @@
 
 #include "codes.h"
 #include "common.h"
+#include "utf8_utils.h"
+#include "utf8_fs.h"
 
 /*
  * Function:		parseVTID_ParseTitleID()
@@ -1023,48 +1025,48 @@ int FilterInstalledGameList(struct game_entry * games, int count, char ** instal
 struct game_entry * ReadUserList(int * gmc)
 {
     char * userPath;
-    if (dir_exists(USERLIST_PATH_USB) == SUCCESS)
+    if (utf8_dir_exists(USERLIST_PATH_USB) == SUCCESS)
         userPath = (char*)USERLIST_PATH_USB;
     else
         userPath = (char*)USERLIST_PATH_HDD;
     
-    int game_count = getDirListSize(userPath);
+    int game_count = utf8_get_dir_list_size(userPath);
     if (!game_count)
         return NULL;
     struct game_entry * ret = (struct game_entry *)malloc(sizeof(struct game_entry) * game_count);
     *gmc = game_count;
     
     DIR *d;
-    struct dirent *dir;
-    d = opendir(userPath);
+    d = utf8_opendir(userPath);
     
     char fullPath[256];
+    char fileName[256];
     int cur_count = 0;
     
     if (d)
     {
         
-        while ((dir = readdir(d)) != NULL)
+        while (utf8_readdir(d, fileName, sizeof(fileName)) == 0)
         {
-            if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0)
+            if (strcmp(fileName, ".") != 0 && strcmp(fileName, "..") != 0)
             {
-                snprintf(fullPath, sizeof(fullPath)-1, "%s%s", userPath, dir->d_name);
-                if (file_exists(fullPath) == SUCCESS && EndsWith(dir->d_name, ".ncl"))
+                snprintf(fullPath, sizeof(fullPath)-1, "%s%s", userPath, fileName);
+                if (utf8_file_exists(fullPath) == SUCCESS && utf8_ends_with(fileName, ".ncl"))
                 {
                     int ccnt[1] = {0};
                     
-                    LOG("ReadUserList() :: Reading %s...", dir->d_name);
+                    LOG("ReadUserList() :: Reading %s...", fileName);
                     
                     //ret[cur_count].codes = ReadNCL(fullPath, (int *)ccnt);
-					ret[cur_count].codes = NULL;
-					ret[cur_count].path = malloc(strlen(fullPath) + 1);
-					strcpy(ret[cur_count].path, fullPath);
+			ret[cur_count].codes = NULL;
+			ret[cur_count].path = malloc(strlen(fullPath) + 1);
+			strcpy(ret[cur_count].path, fullPath);
                     ret[cur_count].code_count = *ccnt;
-                    ret[cur_count].name = stripExt(dir->d_name);
+                    ret[cur_count].name = stripExt(fileName);
                     ret[cur_count].code_sorted = 0;
-					ret[cur_count].version = NULL;
-					ret[cur_count].title_id = NULL;
-					parseVTID(&ret[cur_count]);
+			ret[cur_count].version = NULL;
+			ret[cur_count].title_id = NULL;
+			parseVTID(&ret[cur_count]);
                     
                     //printf("Successfully read %d codes\n", ret[cur_count].code_count);
                     
@@ -1073,7 +1075,7 @@ struct game_entry * ReadUserList(int * gmc)
             }
         }
         
-        closedir(d);
+        utf8_closedir(d);
     }
     
     return ret;
