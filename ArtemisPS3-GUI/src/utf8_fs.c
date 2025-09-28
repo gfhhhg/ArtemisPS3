@@ -63,13 +63,13 @@ int utf8_readdir(DIR *dir, char *name, size_t name_len)
 int utf8_dir_exists(const char *path)
 {
     if (!path)
-        return ERROR;
+        return FAILED;
     
     struct stat st;
     if (stat(path, &st) != 0)
-        return ERROR;
+        return FAILED;
     
-    return S_ISDIR(st.st_mode) ? SUCCESS : ERROR;
+    return S_ISDIR(st.st_mode) ? SUCCESS : FAILED;
 }
 
 /*
@@ -79,13 +79,13 @@ int utf8_dir_exists(const char *path)
 int utf8_file_exists(const char *path)
 {
     if (!path)
-        return ERROR;
+        return FAILED;
     
     struct stat st;
     if (stat(path, &st) != 0)
-        return ERROR;
+        return FAILED;
     
-    return S_ISREG(st.st_mode) ? SUCCESS : ERROR;
+    return S_ISREG(st.st_mode) ? SUCCESS : FAILED;
 }
 
 /*

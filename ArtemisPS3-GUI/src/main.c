@@ -908,8 +908,8 @@ void LoadTextures_Menu(void)
 		}
 	}
 
-	u32 tBytes = texture_pointer - texture_mem;
-	LOG("LoadTextures_Menu() :: Allocated %db (%.02fkb, %.02fmb) for textures\n", tBytes, tBytes / (float)1024, tBytes / (float)(1024 * 1024));
+	//u32 tBytes = texture_pointer - texture_mem;
+	//LOG("LoadTextures_Menu() :: Allocated %db (%.02fkb, %.02fmb) for textures\n", tBytes, tBytes / (float)1024, tBytes / (float)(1024 * 1024));
 }
 
 short *background_music = NULL;
@@ -1919,7 +1919,7 @@ s32 main(s32 argc, const char* argv[])
     tiny3d_Flip();
     
     // 暂停2秒让用户看到测试结果
-    sys_usleep(2000000);
+    sysUsleep(2000000);
     
     SetMenu(0);
     
