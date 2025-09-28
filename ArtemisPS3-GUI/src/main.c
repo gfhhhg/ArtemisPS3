@@ -54,7 +54,6 @@
 #include "comfortaa_bold_ttf.h"
 #include "comfortaa_light_ttf.h"
 #include "comfortaa_regular_ttf.h"
-#include "source_han_sans_ttf.h"
 
 //Sound
 #include <soundlib/spu_soundlib.h>
