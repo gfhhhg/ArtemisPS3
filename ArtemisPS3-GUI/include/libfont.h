@@ -7,6 +7,7 @@
 #define LIBFONT_H
 
 #include <tiny3d.h>
+#include <pngdec/pngdec.h>
 #include "menu.h"
 
 /* NOTE: LIBFONT is thinkin to work with Tiny3D 2D mode: you need to call tiny3d_Project2D() before to work with draw functions */
