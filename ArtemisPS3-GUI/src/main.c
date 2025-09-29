@@ -313,7 +313,7 @@ void LoadGames(void)
 	{
 		for (x = 0; x < user_installed_titleids_count; x++)
 			if (user_installed_titleids[x])
-				free(user_installed_titleids);
+				free(user_installed_titleids[x]);
 
 		free(user_installed_titleids);
 	}

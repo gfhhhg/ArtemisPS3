@@ -715,88 +715,141 @@ float DrawUTF8String(float x, float y, const char *str) {
                 x += ddX;
             }
         } else {
-            // 对于非ASCII字符（如中文），使用我们修改后的多字体渲染功能
-            // 保存当前字体状态
-            int temp_font = font_datas.current_font;
-            
-            unsigned char bitmap[1024]; // 假设最大32x32位图
-            short w, h, y_correction;
-            
-            // 使用TTF_to_Bitmap函数处理多字体渲染，尝试从PS3系统字体中查找合适的字符
-            TTF_to_Bitmap(code, bitmap, &w, &h, &y_correction);
-            
-            if(w > 0 && h > 0)
-            {
-                // 1. 先计算与ASCII字符相同的字符框大小
-                float char_height = font_datas.sy;
-                float char_width = (font_datas.sx + font_datas.extra) * 2;
+            // 对于非ASCII字符（如中文），确保使用正确的字体
+            // 先检查是否已经加载了中文字体
+            if (font_datas.number_of_fonts > font_source_han_sans) {
+                // 保存当前字体
+                int temp_font = font_datas.current_font;
+                // 切换到中文字体
+                SetCurrentFont(font_source_han_sans);
                 
-                // 2. 计算缩放因子，使中文字符适合这个字符框
-                float scale_factor = 1.0f;
-                if (h > 0 && w > 0) {
-                    // 计算垂直方向的缩放因子
-                    float scale_y = char_height / (float)h;
-                    // 计算水平方向的缩放因子
-                    float scale_x = char_width / (float)w;
-                    // 使用较小的缩放因子，确保字符完全适合字符框
-                    scale_factor = (scale_x < scale_y) ? scale_x : scale_y;
-                    // 确保缩放因子不会太小，导致字体过细
-                    if (scale_factor < 0.8f) {
-                        scale_factor = 0.8f;
-                    }
-                }
+                // 直接使用DrawChar函数尝试渲染字符
+                DrawChar(x, y, font_datas.Z, (u8)(code & 0xFF));
                 
-                // 3. 计算垂直位置，确保中文字符的基线与ASCII字符对齐
-                float dy2 = (float)(font_datas.sy * font_datas.fonts[current_font].bh) / (float)font_datas.fonts[current_font].h;
-                float char_y_float = y + dy2 - (h * scale_factor);
+                // 如果字符宽度没有变化，说明无法渲染，使用TTF_to_Bitmap备用方法
+                float new_x = x + dx * font_datas.fonts[font_datas.current_font].fw[(u8)(code & 0xFF)] / 
+                             font_datas.fonts[font_datas.current_font].w;
                 
-                // 4. 微调垂直位置，确保视觉一致性
-                char_y_float += 2;
-                
-                // 5. 计算字符在字符框中的水平居中位置
-                float horizontal_offset = (char_width - (w * scale_factor)) / 2;
-                int char_x = (int)x + horizontal_offset;
-                int char_y = (int)char_y_float;
-                
-                // 绘制字符位图
-                // 设置多边形模式
-                tiny3d_SetPolygon(TINY3D_QUADS);
-                
-                // 对于每个像素，绘制一个四边形，并应用缩放因子
-                int row, col;
-                for (row = 0; row < h; row++) {
-                    for (col = 0; col < w; col++) {
-                        u8 alpha = bitmap[row * w + col];
-                        if (alpha > 0) {
-                            // 计算正确的颜色值，确保alpha通道被正确使用
-                            u32 color = (font_datas.color & 0xffffff00) | alpha;
-                             
-                            // 应用缩放因子绘制字符
-                            float scaled_row = row * scale_factor;
-                            float scaled_col = col * scale_factor;
-                            float scaled_next_row = scaled_row + scale_factor;
-                            float scaled_next_col = scaled_col + scale_factor;
-                             
-                            // 绘制缩放后的像素
-                            tiny3d_VertexPos(char_x + scaled_col, char_y + scaled_row, font_datas.Z);
-                            tiny3d_VertexColor(color);
-                            tiny3d_VertexPos(char_x + scaled_next_col, char_y + scaled_row, font_datas.Z);
-                            tiny3d_VertexPos(char_x + scaled_next_col, char_y + scaled_next_row, font_datas.Z);
-                            tiny3d_VertexPos(char_x + scaled_col, char_y + scaled_next_row, font_datas.Z);
+                if (new_x <= x + 2) {
+                    // 无法渲染字符，使用TTF_to_Bitmap备用方法
+                    unsigned char bitmap[1024]; // 假设最大32x32位图
+                    short w = 24, h = 24, y_correction;
+                    
+                    // 使用TTF_to_Bitmap函数处理多字体渲染
+                    TTF_to_Bitmap(code, bitmap, &w, &h, &y_correction);
+                    
+                    if(w > 0 && h > 0) {
+                        // 计算字符框大小
+                        float char_height = font_datas.sy;
+                        float char_width = (font_datas.sx + font_datas.extra) * 2;
+                        
+                        // 计算缩放因子
+                        float scale_factor = 1.0f;
+                        if (h > 0 && w > 0) {
+                            float scale_y = char_height / (float)h;
+                            float scale_x = char_width / (float)w;
+                            scale_factor = (scale_x < scale_y) ? scale_x : scale_y;
+                            if (scale_factor < 0.8f) {
+                                scale_factor = 0.8f;
+                            }
                         }
+                        
+                        // 计算位置
+                        float dy2 = (float)(font_datas.sy * font_datas.fonts[temp_font].bh) / (float)font_datas.fonts[temp_font].h;
+                        float char_y_float = y + dy2 - (h * scale_factor);
+                        char_y_float += 2;
+                        
+                        float horizontal_offset = (char_width - (w * scale_factor)) / 2;
+                        int char_x = (int)x + horizontal_offset;
+                        int char_y = (int)char_y_float;
+                        
+                        // 绘制字符位图
+                        tiny3d_SetPolygon(TINY3D_QUADS);
+                        
+                        // 优化：批量渲染而不是逐像素渲染
+                        float scaled_w = w * scale_factor;
+                        float scaled_h = h * scale_factor;
+                        
+                        // 创建临时纹理
+                        u32 *temp_texture = (u32*)malloc(w * h * 4);
+                        if (temp_texture) {
+                            for (int row = 0; row < h; row++) {
+                                for (int col = 0; col < w; col++) {
+                                    u8 alpha = bitmap[row * w + col];
+                                    if (alpha > 0) {
+                                        // 计算正确的颜色值
+                                        u32 color = (font_datas.color & 0xffffff00) | alpha;
+                                        temp_texture[row * w + col] = color;
+                                    } else {
+                                        temp_texture[row * w + col] = 0;
+                                    }
+                                }
+                            }
+                            
+                            // 计算纹理偏移量
+                            u32 tex_offset = tiny3d_TextureOffset(temp_texture);
+                            
+                            // 设置纹理
+                            tiny3d_SetTexture(0, tex_offset, w, h, w * 4, TINY3D_TEX_FORMAT_A8R8G8B8, 1);
+                            
+                            // 绘制缩放后的字符
+                            tiny3d_VertexPos(char_x, char_y, font_datas.Z);
+                            tiny3d_VertexColor(0xFFFFFFFF);
+                            tiny3d_VertexTexture(0.0f, 0.0f);
+                            
+                            tiny3d_VertexPos(char_x + scaled_w, char_y, font_datas.Z);
+                            tiny3d_VertexTexture(1.0f, 0.0f);
+                            
+                            tiny3d_VertexPos(char_x + scaled_w, char_y + scaled_h, font_datas.Z);
+                            tiny3d_VertexTexture(1.0f, 1.0f);
+                            
+                            tiny3d_VertexPos(char_x, char_y + scaled_h, font_datas.Z);
+                            tiny3d_VertexTexture(0.0f, 1.0f);
+                            
+                            tiny3d_End();
+                            
+                            free(temp_texture);
+                        }
+                        
+                        x += char_width;
+                    } else {
+                        // 如果无法渲染字符，绘制一个方块作为占位符
+                        float char_width = (font_datas.sx + font_datas.extra) * 2;
+                        float char_height = font_datas.sy;
+                        
+                        if (font_datas.bkcolor) {
+                            tiny3d_SetPolygon(TINY3D_QUADS);
+                            tiny3d_VertexPos(x, y, font_datas.Z);
+                            tiny3d_VertexColor(font_datas.bkcolor);
+                            tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                            tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                            tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                            tiny3d_End();
+                        }
+                        
+                        tiny3d_SetPolygon(TINY3D_QUADS);
+                        tiny3d_VertexPos(x, y, font_datas.Z);
+                        tiny3d_VertexColor(font_datas.color);
+                        tiny3d_VertexPos(x + char_width, y, font_datas.Z);
+                        tiny3d_VertexPos(x + char_width, y + char_height, font_datas.Z);
+                        tiny3d_VertexPos(x, y + char_height, font_datas.Z);
+                        tiny3d_End();
+                        
+                        x += char_width;
                     }
+                } else {
+                    // 字符渲染成功
+                    x = new_x;
                 }
                 
-                // 结束绘制
-                tiny3d_End();
-                
-                // 更新X坐标，使用与ASCII字符相同的逻辑，确保字符间距一致
-                x += char_width;
+                // 恢复字体状态
+                SetCurrentFont(temp_font);
             } else {
-                // 如果无法渲染字符，绘制一个方块作为占位符
+                // 没有加载中文字体，使用默认处理方式
                 float char_width = (font_datas.sx + font_datas.extra) * 2;
                 float char_height = font_datas.sy;
                 
+                // 绘制一个方块作为占位符
                 if (font_datas.bkcolor) {
                     tiny3d_SetPolygon(TINY3D_QUADS);
                     tiny3d_VertexPos(x, y, font_datas.Z);
@@ -817,9 +870,6 @@ float DrawUTF8String(float x, float y, const char *str) {
                 
                 x += char_width;
             }
-            
-            // 恢复字体状态
-            SetCurrentFont(temp_font);
         }
     }
     
