@@ -8,6 +8,7 @@
 #include <tiny3d.h>
 #include <pngdec/pngdec.h>
 #include "common.h"
+#include <libfont.h>
 
 // 中文测试函数
 void TestChineseDisplay() {
