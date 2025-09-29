@@ -6,142 +6,312 @@
 #include "utf8_utils.h"
 #include "ttf_fonts.h"
 
+#define MAX_CHARS 1600
+#define TTF_UX 30
+#define TTF_UY 24
+
+typedef struct ttf_dyn {
+    u32 ttf;
+    u16 *text;
+    u32 r_use;
+    u16 y_start;
+    u16 width;
+    u16 height;
+    u16 flags;
+} ttf_dyn;
+
+static ttf_dyn ttf_font_datas[MAX_CHARS];
+static u32 r_use = 0;
+
 float Y_ttf = 0.0f;
 float Z_ttf = 0.0f;
 
-#define MAX_TTF_TEXTURES 256
-#define MAX_CHARS_PER_TTF_TEXTURE 16
-
-u16 *ttf_table[MAX_TTF_TEXTURES];
-short ttf_width[MAX_TTF_TEXTURES];
-short ttf_height[MAX_TTF_TEXTURES];
-short ttf_char_in_texture[MAX_TTF_TEXTURES][MAX_CHARS_PER_TTF_TEXTURE];
-short ttf_char_in_texture_size[MAX_TTF_TEXTURES];
-
-int ttf_defined_textures;
-int ttf_current_frame;
-
-int window_x, window_y, window_w, window_h, window_mode;
-
-void reset_ttf_frame(void)
-{
-    ttf_current_frame ^= 1;
-    if(!ttf_current_frame) {
-        int i;
-        for(i = 0; i < ttf_defined_textures; i++)
-            if(ttf_table[i])
-                memset(ttf_table[i], 0, ttf_width[i] * ttf_height[i]);
-    }
-}
-
-vu16 * init_ttf_table(u16 *texture)
-{
-    int i;
-    
-    for(i = 0; i < MAX_TTF_TEXTURES; i++) {
-        ttf_table[i] = NULL;
-        ttf_char_in_texture_size[i] = 0;
-    }
-    
-    ttf_defined_textures = 0;
-    ttf_current_frame = 0;
-    
-    return (vu16*)texture;
-}
+static int Win_X_ttf = 0;
+static int Win_Y_ttf = 0;
+static int Win_W_ttf = 848;
+static int Win_H_ttf = 512;
+static u32 Win_flag = 0;
 
 void set_ttf_window(int x, int y, int width, int height, u32 mode)
 {
-    window_x = x;
-    window_y = y;
-    window_w = width;
-    window_h = height;
-    window_mode = mode;
+    Win_X_ttf = x;
+    Win_Y_ttf = y;
+    Win_W_ttf = width;
+    Win_H_ttf = height;
+    Win_flag = mode;
+    Y_ttf = 0.0f;
+    Z_ttf = 0.0f;
 }
 
-int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bkcolor, int sw, int sh, int (*DrawIcon)(int, int, char))
+static void DrawBox_ttf(float x, float y, float z, float w, float h, u32 rgba)
 {
-    int x = posx;
-    int y = posy;
-    const uint8_t *p = (const uint8_t *)string;
+    tiny3d_SetPolygon(TINY3D_QUADS);
     
-    u8 bitmap[256 * 256];
-    short w, h, y_correction;
+    tiny3d_VertexPos(x    , y    , z);
+    tiny3d_VertexColor(rgba);
     
-    while (*p)
-    {
-        uint32_t code = utf8_decode(&p);
+    tiny3d_VertexPos(x + w, y    , z);
+    
+    tiny3d_VertexPos(x + w, y + h, z);
+    
+    tiny3d_VertexPos(x    , y + h, z);
+    
+    tiny3d_End();
+}
+
+static void DrawTextBox_ttf(float x, float y, float z, float w, float h, u32 rgba, float tx, float ty)
+{
+    tiny3d_SetPolygon(TINY3D_QUADS);
+    
+    tiny3d_VertexPos(x    , y    , z);
+    tiny3d_VertexColor(rgba);
+    tiny3d_VertexTexture(0.0f , 0.0f);
+    
+    tiny3d_VertexPos(x + w, y    , z);
+    tiny3d_VertexTexture(tx, 0.0f);
+    
+    tiny3d_VertexPos(x + w, y + h, z);
+    tiny3d_VertexTexture(tx, ty);
+    
+    tiny3d_VertexPos(x    , y + h, z);
+    tiny3d_VertexTexture(0.0f , ty);
+    
+    tiny3d_End();
+}
+
+u16 * init_ttf_table(u16 *texture)
+{
+    int n;
+    
+    r_use = 0;
+    for(n = 0; n < MAX_CHARS; n++) {
+        memset(&ttf_font_datas[n], 0, sizeof(ttf_dyn));
+        ttf_font_datas[n].text = texture;
         
-        if(code == 0x0A) { // 换行符
-            if(window_mode & WIN_DOUBLE_LF) y += (sh * 2);
-            else y += sh;
-            x = posx;
+        texture += 32 * 32;
+    }
+    
+    return texture;
+}
+
+void reset_ttf_frame(void)
+{
+    int n;
+    
+    for(n = 0; n < MAX_CHARS; n++) {
+        ttf_font_datas[n].flags &= 1;
+    }
+    
+    r_use++;
+}
+
+int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bkcolor, int sw, int sh, int (*DrawIcon_cb)(int, int, char))
+{
+    int l, n, m, ww, ww2;
+    u8 colorc;
+    u32 ttf_char;
+    u8 *ustring = (u8 *) string;
+    
+    int lenx = 0;
+    
+    while(*ustring) {
+        
+        if(posy >= Win_H_ttf) break;
+        
+        if(*ustring == ' ') {
+            posx += sw >> 1;
+            ustring++;
             continue;
         }
         
-        if(code == 0x0D) continue; // 回车符，跳过
-        
-        if(code < 128) { // ASCII字符
-            if(code == 0x20) { // 空格
-                x += sw / 2;
+        // UTF-8解码
+        if(*ustring & 128) {
+            m = 1;
+            
+            if((*ustring & 0xf8) == 0xf0) { // 4字节
+                ttf_char = (u32) (*(ustring++) & 3);
+                m = 3;
+            } else if((*ustring & 0xE0) == 0xE0) { // 3字节
+                ttf_char = (u32) (*(ustring++) & 0xf);
+                m = 2;
+            } else if((*ustring & 0xE0) == 0xC0) { // 2字节
+                ttf_char = (u32) (*(ustring++) & 0x1f);
+                m = 1;
+            } else {
+                ustring++;
                 continue;
+            } // 错误!
+            
+            for(n = 0; n < m; n++) {
+                if(!*ustring) break; // 错误!
+                if((*ustring & 0xc0) != 0x80) break; // 错误!
+                ttf_char = (ttf_char << 6) | ((u32) (*(ustring++) & 63));
             }
             
-            if(DrawIcon && DrawIcon(x, y, code)) {
-                x += sw;
-                continue;
+            if((n != m) && !*ustring) break;
+            
+        } else {
+            ttf_char = (u32) *(ustring++);
+        }
+        
+        // 窗口模式处理
+        if(Win_flag & WIN_SKIP_LF) {
+            if(ttf_char == '\r' || ttf_char == '\n')
+                ttf_char = ' ';
+        } else {
+            if(Win_flag & WIN_DOUBLE_LF) {
+                if(ttf_char == '\r') {
+                    if(posx > lenx) lenx = posx;
+                    posx = 0;
+                    continue;
+                }
+                if(ttf_char == '\n') {
+                    posy += sh;
+                    continue;
+                }
+            } else {
+                if(ttf_char == '\n') {
+                    if(posx > lenx) lenx = posx;
+                    posx = 0;
+                    posy += sh;
+                    continue;
+                }
             }
         }
         
-        w = sw;
-        h = sh;
-        TTF_to_Bitmap(code, bitmap, &w, &h, &y_correction);
+        // 图标处理
+        if((ttf_char < 32) && DrawIcon_cb) {
+            int resx = DrawIcon_cb(posx, posy, (char) ttf_char);
+            if(resx > 0) {
+                posx += resx;
+                continue;
+            } else {
+                ttf_char = '?';
+            }
+        }
         
-        if(w > 0 && h > 0) {
-            if(color) {
-                tiny3d_SetPolygon(TINY3D_QUADS);
+        // 查找或分配字符槽
+        if(ttf_char < 128) {
+            n = ttf_char;
+        } else {
+            m = 0;
+            int rel = 0;
+            
+            for(n = 128; n < MAX_CHARS; n++) {
+                if(!(ttf_font_datas[n].flags & 1))
+                    m = n;
                 
-                if(bkcolor) {
-                    tiny3d_VertexPos(x, y, 0);
-                    tiny3d_VertexColor(bkcolor);
-                    tiny3d_VertexPos(x + w, y, 0);
-                    tiny3d_VertexPos(x + w, y + h, 0);
-                    tiny3d_VertexPos(x, y + h, 0);
-                    tiny3d_End();
-                    tiny3d_SetPolygon(TINY3D_QUADS);
-                }
-                
-                y_correction = (sh / 2) - (h / 2);
-                
-                int row, col;
-                for(row = 0; row < h; row++) {
-                    for(col = 0; col < w; col++) {
-                        u8 alpha = bitmap[row * w + col];
-                        if(alpha > 0) {
-                            u32 c = color;
-                            c &= 0xFFFFFF00;
-                            c |= alpha;
-                            
-                            tiny3d_VertexPos(x + col, y + row + y_correction, 0);
-                            tiny3d_VertexColor(c);
-                            tiny3d_VertexPos(x + col + 1, y + row + y_correction, 0);
-                            tiny3d_VertexPos(x + col + 1, y + row + y_correction + 1, 0);
-                            tiny3d_VertexPos(x + col, y + row + y_correction + 1, 0);
-                        }
+                if((ttf_font_datas[n].flags & 3) == 1) {
+                    int trel = r_use - ttf_font_datas[n].r_use;
+                    if(m == 0) {
+                        m = n;
+                        rel = trel;
+                    } else if(rel > trel) {
+                        m = n;
+                        rel = trel;
                     }
                 }
-                
-                tiny3d_End();
+                if(ttf_font_datas[n].ttf == ttf_char)
+                    break;
             }
             
-            x += w;
-        } else {
-            x += sw;
+            if(m == 0)
+                m = 128;
         }
+        
+        if(n >= MAX_CHARS) {
+            ttf_font_datas[m].flags = 0;
+            l = m;
+        } else {
+            l = n;
+        }
+        
+        u16 *bitmap = ttf_font_datas[l].text;
+        
+        // 构建字符位图
+        if(!(ttf_font_datas[l].flags & 1)) {
+            short bw = TTF_UX;
+            short bh = TTF_UY;
+            short by_correction;
+            u8 temp_bitmap[TTF_UX * TTF_UY];
+            
+            // 使用TTF_to_Bitmap生成字符位图
+            TTF_to_Bitmap(ttf_char, temp_bitmap, &bw, &bh, &by_correction);
+            
+            memset(bitmap, 0, 32 * 32 * 2);
+            
+            if(bw > 0 && bh > 0) {
+                ww = ww2 = 0;
+                
+                int y_correction = TTF_UY - 1 - by_correction;
+                if(y_correction < 0)
+                    y_correction = 0;
+                
+                ttf_font_datas[l].flags = 1;
+                ttf_font_datas[l].y_start = y_correction;
+                ttf_font_datas[l].height = bh;
+                ttf_font_datas[l].width = bw;
+                ttf_font_datas[l].ttf = ttf_char;
+                
+                for(n = 0; n < bh; n++) {
+                    if(n >= 32)
+                        break;
+                    for(m = 0; m < bw; m++) {
+                        if(m >= 32)
+                            continue;
+                        
+                        colorc = (u8) temp_bitmap[ww + m];
+                        
+                        if(colorc)
+                            bitmap[m + ww2] = (colorc << 8) | 0xfff;
+                    }
+                    
+                    ww2 += 32;
+                    ww += bw;
+                }
+            }
+        }
+        
+        // 显示字符
+        ttf_font_datas[l].flags |= 2; // 正在使用
+        ttf_font_datas[l].r_use = r_use;
+        
+        if((Win_flag & WIN_AUTO_LF) && (posx + (ttf_font_datas[l].width * sw / 32) + 1) > Win_W_ttf) {
+            posx = 0;
+            posy += sh;
+        }
+        
+        u32 ccolor = color;
+        u32 cx = (ttf_font_datas[l].width * sw / 32) + 1;
+        
+        // 超出窗口则跳过
+        if((posx + cx) > Win_W_ttf || (posy + sh) > Win_H_ttf)
+            ccolor = 0;
+        
+        if(ccolor) {
+            // 设置纹理
+            tiny3d_SetTextureWrap(0, tiny3d_TextureOffset(bitmap), 32, 32, 32 * 2,
+                TINY3D_TEX_FORMAT_A4R4G4B4, TEXTWRAP_CLAMP, TEXTWRAP_CLAMP, TEXTURE_LINEAR);
+            
+            // 绘制背景
+            if(bkcolor != 0)
+                DrawBox_ttf((float)(Win_X_ttf + posx), (float)(Win_Y_ttf + posy) + ((float)ttf_font_datas[l].y_start * sh) * 0.03125f,
+                    Z_ttf, (float)sw, (float)sh, bkcolor);
+            
+            // 绘制文字
+            DrawTextBox_ttf((float)(Win_X_ttf + posx), (float)(Win_Y_ttf + posy) + ((float)ttf_font_datas[l].y_start * sh) * 0.03125f,
+                Z_ttf, (float)sw, (float)sh, color,
+                0.99f, 0.99f);
+        }
+        
+        posx += cx;
     }
     
-    Y_ttf = y;
+    Y_ttf = (float)posy + sh;
     
-    return x;
+    if(posx < lenx)
+        posx = lenx;
+    return posx;
 }
 
 int width_ttf_string(const char *string, int sw, int sh)
