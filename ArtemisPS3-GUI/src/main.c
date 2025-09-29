@@ -1843,7 +1843,35 @@ s32 main(s32 argc, const char* argv[]){
 	SetCurrentFont(0);
     
     // 初始化PS3系统字体，支持中文等多语言显示
-    InitPS3SystemFonts();
+    int font_init_result = InitPS3SystemFonts();
+    if(font_init_result != 0) {
+        LOG("Font initialization failed with code: %d\n", font_init_result);
+        // 如果字体初始化失败，尝试使用最基本的渲染方式
+        // 在屏幕上显示错误信息
+        while(!close_art) {
+            tiny3d_Clear(0xff000000, TINY3D_CLEAR_ALL);
+            tiny3d_Project2D();
+            
+            // 使用简单的图形绘制错误信息
+            tiny3d_SetPolygon(TINY3D_QUADS);
+            tiny3d_VertexPos(100, 200, 0);
+            tiny3d_VertexColor(0xffff0000);
+            tiny3d_VertexPos(748, 200, 0);
+            tiny3d_VertexPos(748, 312, 0);
+            tiny3d_VertexPos(100, 312, 0);
+            tiny3d_End();
+            
+            tiny3d_Flip();
+            
+            // 检查按键是否退出
+            if(readPad(0)) {
+                if(paddata[0].BTN_CIRCLE || paddata[0].BTN_START) {
+                    close_art = 1;
+                }
+            }
+        }
+        return -1;
+    }
 	RegisterSpecialCharacter(0x10,
 		menu_textures[footer_ico_cross_png_index].texture.width / 1,
 		4,

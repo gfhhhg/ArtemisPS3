@@ -106,11 +106,15 @@ void reset_ttf_frame(void)
 }
 
 int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bkcolor, int sw, int sh, int (*DrawIcon_cb)(int, int, char))
-{
-    int l, n, m, ww, ww2;
+{    int l, n, m, ww, ww2;
     u8 colorc;
     u32 ttf_char;
     u8 *ustring = (u8 *) string;
+    
+    // 参数有效性检查
+    if(!string || sw <= 0 || sh <= 0) {
+        return 0;
+    }
     
     int lenx = 0;
     
