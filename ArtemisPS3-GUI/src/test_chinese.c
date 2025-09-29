@@ -4,9 +4,7 @@
  */
 
 #include <stdio.h>
-#include "libfont.h"
 #include <tiny3d.h>
-#include <pngdec/pngdec.h>
 #include "common.h"
 #include <libfont.h>
 
