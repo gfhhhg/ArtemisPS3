@@ -79,7 +79,7 @@ static void DrawTextBox_ttf(float x, float y, float z, float w, float h, u32 rgb
     tiny3d_End();
 }
 
-u16 * init_ttf_table(u16 *texture)
+vu16 * init_ttf_table(u16 *texture)
 {
     int n;
     
