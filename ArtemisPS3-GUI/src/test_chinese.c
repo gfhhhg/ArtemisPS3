@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "libfont.h"
 #include <tiny3d.h>
+#include <pngdec/pngdec.h>
 #include "common.h"
 
 // 中文测试函数
