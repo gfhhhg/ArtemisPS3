@@ -6,21 +6,27 @@
 #include <stdio.h>
 #include "libfont.h"
 #include <tiny3d.h>
+#include "common.h"
 
 // 中文测试函数
 void TestChineseDisplay() {
     // 初始化Tiny3D
-    tiny3d_Init(1920, 1080, 0, TINY3D_BPP_32);
-    tiny3d_SetRenderMode(1);
+    tiny3d_Init(1024*1024); // 正确的参数：只需要顶点缓冲区大小
     
     // 设置字体
-    SetCurrentFont(font_comfortaa_regular);
+    SetCurrentFont(0); // 使用默认字体索引
     SetFontSize(24, 24);
     SetFontColor(0x000000FF, 0xFFFFFFFF); // 黑色文字，白色背景
     SetFontAlign(1); // 居中对齐
     
     // 清除屏幕
     tiny3d_Clear(0xFFFFFFFF, TINY3D_CLEAR_ALL);
+    
+    // 启用alpha测试和混合
+    tiny3d_AlphaTest(1, 0x10, TINY3D_ALPHA_FUNC_GEQUAL);
+    tiny3d_BlendFunc(1, TINY3D_BLEND_FUNC_SRC_RGB_SRC_ALPHA | TINY3D_BLEND_FUNC_SRC_ALPHA_SRC_ALPHA,
+        TINY3D_BLEND_FUNC_SRC_ALPHA_ONE_MINUS_SRC_ALPHA | TINY3D_BLEND_FUNC_SRC_RGB_ONE_MINUS_SRC_ALPHA,
+        TINY3D_BLEND_RGB_FUNC_ADD | TINY3D_BLEND_ALPHA_FUNC_ADD);
     
     // 渲染2D内容
     tiny3d_Project2D();
@@ -66,8 +72,7 @@ void TestChineseDisplay() {
     // 等待用户按键
     printf("中文显示测试已运行，请在PS3上查看结果\n");
     
-    // 清理资源
-    tiny3d_Shutdown();
+    // 注意：tiny3d_Shutdown函数在当前环境中未定义，因此不需要调用
 }
 
 // 主函数入口（如果需要单独运行）

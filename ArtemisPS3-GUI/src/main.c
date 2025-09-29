@@ -56,6 +56,9 @@
 // #include "comfortaa_regular_ttf.h"
 // #include "source_han_sans_ttf.h"
 
+// 声明PS3系统字体初始化函数
+extern int InitPS3SystemFonts();
+
 //Sound
 #include <soundlib/spu_soundlib.h>
 #include <soundlib/audioplayer.h>
