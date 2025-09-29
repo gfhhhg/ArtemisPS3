@@ -836,11 +836,8 @@ void LoadTexture(void)
     
     ResetFont();
     
-    // 只加载PS3系统字体
-    TTFLoadFont(0, "/dev_flash/data/font/SCE-PS3-SR-R-LATIN2.TTF", NULL, 0); // 拉丁文字体
-    TTFLoadFont(1, "/dev_flash/data/font/SCE-PS3-DH-R-CGB.TTF", NULL, 0);    // 中文字体
-    TTFLoadFont(2, "/dev_flash/data/font/SCE-PS3-SR-R-JPN.TTF", NULL, 0);    // 日文字体
-    TTFLoadFont(3, "/dev_flash/data/font/SCE-PS3-YG-R-KOR.TTF", NULL, 0);    // 韩文字体
+    // 初始化PS3系统字体
+    InitPS3SystemFonts(); // 使用ttf_fonts.c中的初始化函数来加载正确的系统字体
     
     // 设置字体内存指针
     font_mem = texture_pointer;
