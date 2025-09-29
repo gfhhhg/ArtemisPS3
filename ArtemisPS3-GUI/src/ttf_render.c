@@ -240,8 +240,9 @@ int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bk
             
             memset(bitmap, 0, 32 * 32 * 2);
             
-            if(bw > 0 && bh > 0) {
-                ww = ww2 = 0;
+            if(bw > 0 && bh > 0 && bw <= 32 && bh <= 32) { // 确保尺寸在有效范围内
+                ww = 0;
+                ww2 = 0;
                 
                 int y_correction = TTF_UY - 1 - by_correction;
                 if(y_correction < 0)
@@ -257,7 +258,7 @@ int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bk
                     if(n >= 32)
                         break;
                     for(m = 0; m < bw; m++) {
-                        if(m >= 32)
+                        if(m >= 32 || ww + m >= bw * bh) // 防止缓冲区溢出
                             continue;
                         
                         colorc = (u8) temp_bitmap[ww + m];
@@ -269,6 +270,11 @@ int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bk
                     ww2 += 32;
                     ww += bw;
                 }
+            } else {
+                // 字符无法渲染或尺寸过大
+                ttf_font_datas[l].flags = 0;
+                ttf_font_datas[l].width = 0;
+                ttf_font_datas[l].height = 0;
             }
         }
         
@@ -288,7 +294,18 @@ int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bk
         if((posx + cx) > Win_W_ttf || (posy + sh) > Win_H_ttf)
             ccolor = 0;
         
-        if(ccolor) {
+        // 只有当字符有效且尺寸合理时才进行渲染
+        if(ccolor && bitmap && ttf_font_datas[l].width > 0 && ttf_font_datas[l].height > 0) {
+            // 计算纹理坐标，确保在有效范围内
+            float tex_width = (float)ttf_font_datas[l].width / 32.0f;
+            float tex_height = (float)ttf_font_datas[l].height / 32.0f;
+            
+            // 限制纹理坐标范围
+            if(tex_width > 1.0f) tex_width = 1.0f;
+            if(tex_height > 1.0f) tex_height = 1.0f;
+            if(tex_width < 0.0f) tex_width = 0.0f;
+            if(tex_height < 0.0f) tex_height = 0.0f;
+            
             // 设置纹理
             tiny3d_SetTextureWrap(0, tiny3d_TextureOffset(bitmap), 32, 32, 32 * 2,
                 TINY3D_TEX_FORMAT_A4R4G4B4, TEXTWRAP_CLAMP, TEXTWRAP_CLAMP, TEXTURE_LINEAR);
@@ -301,7 +318,7 @@ int display_ttf_string(int posx, int posy, const char *string, u32 color, u32 bk
             // 绘制文字
             DrawTextBox_ttf((float)(Win_X_ttf + posx), (float)(Win_Y_ttf + posy) + ((float)ttf_font_datas[l].y_start * sh) * 0.03125f,
                 Z_ttf, (float)sw, (float)sh, color,
-                0.99f, 0.99f);
+                tex_width, tex_height);
         }
         
         posx += cx;
