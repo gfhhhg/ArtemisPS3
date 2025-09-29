@@ -715,28 +715,12 @@ float DrawUTF8String(float x, float y, const char *str) {
                 x += ddX;
             }
         } else {
-            // 对于非ASCII字符（如中文），确保使用正确的字体
-            // 先检查是否已经加载了中文字体
-            if (font_datas.number_of_fonts > font_source_han_sans) {
-                // 保存当前字体
-                int temp_font = font_datas.current_font;
-                // 切换到中文字体
-                SetCurrentFont(font_source_han_sans);
-                
-                // 直接使用DrawChar函数尝试渲染字符
-                DrawChar(x, y, font_datas.Z, (u8)(code & 0xFF));
-                
-                // 如果字符宽度没有变化，说明无法渲染，使用TTF_to_Bitmap备用方法
-                float new_x = x + dx * font_datas.fonts[font_datas.current_font].fw[(u8)(code & 0xFF)] / 
-                             font_datas.fonts[font_datas.current_font].w;
-                
-                if (new_x <= x + 2) {
-                    // 无法渲染字符，使用TTF_to_Bitmap备用方法
-                    unsigned char bitmap[1024]; // 假设最大32x32位图
-                    short w = 24, h = 24, y_correction;
-                    
-                    // 使用TTF_to_Bitmap函数处理多字体渲染
-                    TTF_to_Bitmap(code, bitmap, &w, &h, &y_correction);
+            // 对于非ASCII字符（如中文），直接使用TTF_to_Bitmap方法渲染
+            unsigned char bitmap[1024]; // 假设最大32x32位图
+            short w = 24, h = 24, y_correction;
+            
+            // 使用TTF_to_Bitmap函数处理多字体渲染
+            TTF_to_Bitmap(code, bitmap, &w, &h, &y_correction);
                     
                     if(w > 0 && h > 0) {
                         // 计算字符框大小
@@ -873,7 +857,7 @@ float DrawUTF8String(float x, float y, const char *str) {
         }
     }
     
-    // 恢复原始字体设置
+    // 恢复原始字体设置和颜色设置
     font_datas.color = current_color;
     SetCurrentFont(current_font);
     
@@ -899,15 +883,15 @@ float DrawString(float x, float y, char *str)
     switch (font_datas.align)
     {
     case FONT_ALIGN_SCREEN_CENTER:
-        x= (848 - WidthFromStr((u8*)str)) / 2;
+        x= (848 - WidthFromUTF8(str)) / 2;
         break;
 
     case FONT_ALIGN_RIGHT:
-		x -= WidthFromStr((u8*)str);
+		x -= WidthFromUTF8(str);
         break;
 
     case FONT_ALIGN_CENTER:
-		x -= WidthFromStr((u8*)str)/2;
+		x -= WidthFromUTF8(str)/2;
         break;
 
     default:
@@ -923,48 +907,13 @@ static char buff[4096];
 
 float DrawFormatString(float x, float y, char *format, ...)
 {
-	int dx = font_datas.sx;
-	float initX = x;
-    char *str = (char *) buff;
-    va_list	opt;
+	static char buff[4096];
+    va_list opt;
 	
 	va_start(opt, format);
-	vsprintf( (void *) buff, format, opt);
+	vsnprintf(buff, sizeof(buff), format, opt);
 	va_end(opt);
 
-    if(font_datas.align == 1) {
-    
-        x = (848 - WidthFromStr((u8 *) str)) / 2;
-
-    }
-	else if (font_datas.align == 2) {
-		x -= WidthFromStr((u8 *) str);
-	}
-	else if (font_datas.align == 3) {
-		x -= WidthFromStr((u8 *) str)/2;
-	}
-
-    while (*str) {
-        
-        if(*str == '\n') {
-            x = initX; 
-            y += font_datas.sy * font_datas.fonts[font_datas.current_font].bh / font_datas.fonts[font_datas.current_font].h; 
-            str++;
-            continue;
-        } else {
-            if(font_datas.autonewline && i_must_break_line(str, x)) {
-                x = initX; 
-                y += font_datas.sy * font_datas.fonts[font_datas.current_font].bh / font_datas.fonts[font_datas.current_font].h;
-            }
-        }
-
-        DrawChar(x, y, font_datas.Z, (u8) *str);
-       
-        x += dx * font_datas.fonts[font_datas.current_font].fw[((u8)*str)] / font_datas.fonts[font_datas.current_font].w;
-        str++;
-    }
-
-    font_datas.X = x; font_datas.Y = y;
-
-    return x;
+	// 使用DrawUTF8String来支持UTF-8字符串（包括中文）
+    return DrawUTF8String(x, y, buff);
 }

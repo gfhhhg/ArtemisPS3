@@ -127,7 +127,7 @@ void Draw_OptionsMenu(void)
 				break;
 			case ARTEMIS_OPTION_INC:
 				sprintf((char*)ARTEMIS_OPTION_INC_TEMP, "- %d +", menu_options_selections[ind]);
-				int inc_width = WidthFromStr((u8*)ARTEMIS_OPTION_INC_TEMP);
+				int inc_width = WidthFromUTF8(ARTEMIS_OPTION_INC_TEMP);
 				DrawString((MENU_OPTION_OFF - 18) - (inc_width / 2), y_off, (char*)ARTEMIS_OPTION_INC_TEMP);
 				break;
 		}

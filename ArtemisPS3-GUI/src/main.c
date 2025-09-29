@@ -1817,11 +1817,10 @@ void exiting(void)
 /*
     Program start
 */
-s32 main(s32 argc, const char* argv[])
-{
-	dbglogger_init();
+s32 main(s32 argc, const char* argv[]){
+		dbglogger_init();
 
-	http_init();
+		http_init();
 
     tiny3d_Init(1024*1024);
 
@@ -1842,6 +1841,9 @@ s32 main(s32 argc, const char* argv[])
 	// Setup font
     SetExtraSpace(5);
 	SetCurrentFont(0);
+    
+    // 初始化PS3系统字体，支持中文等多语言显示
+    InitPS3SystemFonts();
 	RegisterSpecialCharacter(0x10,
 		menu_textures[footer_ico_cross_png_index].texture.width / 1,
 		4,

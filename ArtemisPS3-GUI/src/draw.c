@@ -127,11 +127,11 @@ void DrawHeader_Ani(png_texture icon, char * headerTitle, char * headerSubTitle,
 	//header sub title string
 	if (headerSubTitle)
 	{
-		int width = 800 - (MENU_ICON_OFF + MENU_TITLE_OFF + WidthFromStr((u8*)headerTitle)) - 30;
+		int width = 800 - (MENU_ICON_OFF + MENU_TITLE_OFF + WidthFromUTF8(headerTitle)) - 30;
 		SetFontSize(20, 20);
 		char * tName = malloc(strlen(headerSubTitle) + 1);
 		strcpy(tName, headerSubTitle);
-		while (WidthFromStr((u8*)tName) > width)
+		while (WidthFromUTF8(tName) > width)
 		{
 			tName[strlen(tName) - 1] = 0;
 		}
@@ -184,11 +184,11 @@ void DrawHeader(png_texture icon, int xOff, char * headerTitle, char * headerSub
 	//header sub title string
 	if (headerSubTitle)
 	{
-		int width = 800 - (MENU_ICON_OFF + MENU_TITLE_OFF + WidthFromStr((u8*)headerTitle)) - 30;
+		int width = 800 - (MENU_ICON_OFF + MENU_TITLE_OFF + WidthFromUTF8(headerTitle)) - 30;
 		SetFontSize(20, 20);
 		char * tName = malloc(strlen(headerSubTitle) + 1);
 		strcpy(tName, headerSubTitle);
-		while (WidthFromStr((u8*)tName) > width)
+		while (WidthFromUTF8(tName) > width)
 		{
 			tName[strlen(tName) - 1] = 0;
 		}
